@@ -11,7 +11,7 @@ var input = {
 };
 
 var myMaterial = new THREE.ShaderMaterial({
-    uniforms: {
+  uniforms: {
       image: { // Check the Three.JS documentation for the different allowed types and values
         type: "t", 
         value: THREE.ImageUtils.loadTexture('./colors.jpg')
@@ -31,24 +31,43 @@ var myMaterial = new THREE.ShaderMaterial({
       inclination: {
         type: "v3",
         value: new THREE.Vector3(0, 0, 0)
+      },
+      reaction: {
+        type: "fv1",
+        value: []
       }
     },
     vertexShader: require('./shaders/my-vert.glsl'),
     fragmentShader: require('./shaders/my-frag.glsl')
   });
 
+var grid;
+var next;
+
+var dA = 0.8;
+var dB = 0.2;
+var feed = 0.055;
+var k = 0.065;
+
+var width = 10;
+var height = 10;
+var iterations = 25;
+
 // called after the scene loads
 function onLoad(framework) {
   var {scene, camera, renderer, gui, stats} = framework;
 
   // create geometry and add it to the scene
-  var geom_icosa = new THREE.IcosahedronBufferGeometry(10, 5);
+  var geom_icosa = new THREE.IcosahedronBufferGeometry(65, 5);
+  myMaterial.uniforms.reaction.value = react();
   var myIcosa = new THREE.Mesh(geom_icosa, myMaterial);
   scene.add(myIcosa);
 
   // set camera position
-  camera.position.set(15, 15, 90);
+  camera.position.set(15, 15, 180);
   camera.lookAt(new THREE.Vector3(0,0,0));
+
+
 
   // edit params and listen to changes like this
   // more information here: https://workshop.chromeexperiments.com/examples/gui/#1--Basic-Usage
@@ -79,32 +98,81 @@ function onLoad(framework) {
     myMaterial.uniforms.amplitude.value = input.amplitude;
     renderer.render(scene, camera);
   });
+  
+}
 
-  // add a checkbox to toggle mouse interactivity
-  gui.add(input, "mouse_interactivity").onChange(function(newVal) {
-    if (!newVal)
-    {
-      myMaterial.uniforms.inclination.value = new THREE.Vector3(0, 0, 0);
+function react() {
+  grid = [];
+  next = [];
+  for (var x = 0; x < width; x++) {
+    grid[x] = [];
+    next[x] = [];
+    for (var y = 0; y < height; y++) {
+      grid[x][y] = [1, 0];
+      next[x][y] = [1, 0];
     }
-  });
+  }
 
-  // change inclination based on mouse click position
-  window.addEventListener('mousemove', function(event) {
-
-    if (input.mouse_interactivity)
-    {
-      // from http://stackoverflow.com/questions/13055214/mouse-canvas-x-y-to-three-js-world-x-y-z
-      var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, 
-        - (event.clientY / window.innerHeight) * 2 + 1, 0.5);
-      vector.unproject(camera);
-      var dir = vector.sub(camera.position).normalize();
-      var distance = - camera.position.z / dir.z;
-      var pos = camera.position.clone().add(dir.multiplyScalar(distance));
-
-      myMaterial.uniforms.inclination.value = pos;
-      renderer.render(scene, camera);
+  for (var i = width / 2 - 1; i < width / 2 + 1; i++) {
+    for (var j = height / 2 - 1; j < height / 2 + 1; j++) {
+      if (withinBounds(i, j) && 
+        Math.pow(i - width / 2, 2) + Math.pow(j - height / 2, 2) < 25 && 
+        grid[i][j] != undefined) {
+        grid[i][j][1] = 1;
+      }
     }
-  });
+  }
+
+  var result = []
+
+  for (var t = 0; t < iterations; t++) {
+    for (var x = 0; x < width; x++) {
+      for (var y = 0; y < height; y++) {
+        var a = grid[x][y][0];
+        var b = grid[x][y][1];
+        next[x][y][0] = constrain(a +
+          (dA * laplace(x, y, 0)) -
+          (a * b * b) +
+          (feed * (1 - a)), 0, 1);
+        next[x][y][1] = constrain(b +
+          (dB * laplace(x, y, 1)) +
+          (a * b * b) -
+          ((k + feed) * b), 0, 1);
+
+        var c = Math.floor((next[x][y][0] - next[x][y][1]) * 255);
+        result[(x * width) + y] = constrain(c, 0, 255);
+      }
+    }
+    swap();
+  }
+  console.log(result);
+  return result;
+}
+
+function laplace(x, y, i) {
+  var sum = 0;
+  for (var a = -1; a <= 1; a++) {
+    for (var b = -1; b <= 1; b++) {
+      if (!withinBounds(x + a, y + b)) return 0;
+      var m = a == 0 && b == 0 ? - 1 : a == 0 || b == 0 ? 0.2 : 0.05;
+      sum += m * grid[x + a][y + b][i];
+    }
+  }
+  return sum;
+}
+
+function withinBounds(x, y) {
+  return x >= 0 && x < width && y >= 0 && y < height;
+}
+
+function swap() {
+  var temp = grid;
+  grid = next;
+  next = temp;
+}
+
+function constrain(a, x, y) {
+  return Math.min(Math.max(a, x), y);
 }
 
 // called on frame updates
