@@ -72,12 +72,12 @@ float pnoise(vec3 pos)
 
 void main() {
 	noise = pnoise(position + vec3(time, time, time)) - 0.5;
-    float ampl = amplitude;
-    if (inclination != vec3(0, 0, 0)) {
-        ampl -= dot(normal, normalize(inclination)) * amplitude;
-    }
-    highp int index = int((uv.x * 10.0 + uv.y) * 100.0);
-    react = reaction[index] / 255.0;
-	vec3 p = position + normalize(normal);
+  float ampl = amplitude;
+  if (inclination != vec3(0, 0, 0)) {
+      ampl -= dot(normal, normalize(inclination)) * amplitude;
+  }
+  highp int index = int((uv.x * 10.0 + uv.y) * 100.0);
+  react = reaction[index] / 255.0;
+	vec3 p = position + noise * amplitude * normalize(normal);
 	gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
 }
