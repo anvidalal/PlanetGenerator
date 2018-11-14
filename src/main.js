@@ -15,25 +15,9 @@ var myMaterial = new THREE.ShaderMaterial({
       type: "t",
       value: THREE.ImageUtils.loadTexture('./colors.jpg')
     },
-    time: {
-      type: "float",
-      value: currTime
-    },
-    persistence: {
-      type: "float",
-      value: 0.59
-    },
     amplitude: {
       type: "float",
       value: 40.0
-    },
-    inclination: {
-      type: "v3",
-      value: new THREE.Vector3(0, 0, 0)
-    },
-    reaction: {
-      type: "fv1",
-      value: []
     }
   },
   vertexShader: require('./shaders/my-vert.glsl'),
@@ -84,17 +68,20 @@ function onLoad(framework) {
   //create cloud geometry and add to scene
   var cloud_geom = new THREE.IcosahedronBufferGeometry(50, 5);
   var cloud_mesh = new THREE.Mesh(cloud_geom, cloudMaterial);
-  scene.add(cloud_mesh);
+  if (input.cloud_visibility) {
+    scene.add(cloud_mesh);
+  }
+
 
   // set camera position
-  camera.position.set(15, 15, 90);
+  camera.position.set(15, 15, 200);
   camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-  // add a slider to let user change *radius* of icosahedron
+  // add a slider to let user change radius of icosahedron
   gui.add(myIcosa.geometry.parameters, 'radius', 0, 100).onChange(function (newVal) {
     var detail = myIcosa.geometry.parameters.detail;
     scene.remove(myIcosa);
-    myIcosa = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(newVal, detail), myMaterial);
+    myIcosa = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(newVal / 100 * 10 + 20, detail), myMaterial);
     scene.add(myIcosa);
     renderer.render(scene, camera);
   });
@@ -106,8 +93,8 @@ function onLoad(framework) {
   });
 
   // add a checkbox to toggle cloud visibility
-  gui.add(input, "cloud_visibility").onChange(function (newVal) {
-    newVal ? scene.add(cloud_mesh) : scene.remove(cloud_mesh);
+  gui.add(input, "cloud_visibility").onChange(function () {
+    input.cloud_visibility ? scene.add(cloud_mesh) : scene.remove(cloud_mesh);
   });
 
   renderer.render(scene, camera);
@@ -152,7 +139,7 @@ function react() {
           ((k + feed) * b), 0, 1);
 
         var c = Math.floor((next[x][y][0] - next[x][y][1]) * 255);
-        result[(x * width) + y] = constrain(c, 0, 255);
+        result[(x * width) + y] = constrain(c, 0, 255) / 255;
       }
     }
     swap();

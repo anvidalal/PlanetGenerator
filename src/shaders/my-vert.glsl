@@ -1,10 +1,5 @@
 varying float noise;
-varying float react;
 uniform float amplitude;
-uniform float time;
-uniform float persistence;
-uniform vec3 inclination;
-uniform float reaction[100];
 float M_PI = 3.14159265359;
 
 float noise_gen(vec3 pos)
@@ -63,21 +58,15 @@ float pnoise(vec3 pos)
 	for (int i = 0; i < 16; ++i)
 	{
 		float fq = pow(2.0, float(i));
-		float amplitude = pow(persistence, float(i));
+		float a = pow(0.59, float(i));
 
-		total += noise_interpolate(pos, fq) * amplitude;
+		total += noise_interpolate(pos, fq) * a;
 	}
 	return total;
 }
 
 void main() {
-	noise = pnoise(position + vec3(time, time, time)) - 0.5;
-  float ampl = amplitude;
-  if (inclination != vec3(0, 0, 0)) {
-      ampl -= dot(normal, normalize(inclination)) * amplitude;
-  }
-  highp int index = int((uv.x * 10.0 + uv.y) * 100.0);
-  react = reaction[index] / 255.0;
-	vec3 p = position + noise * amplitude * normalize(normal);
+	noise = pnoise(position) - 0.5;	
+  vec3 p = position + noise * amplitude * normalize(normal);
 	gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
 }
