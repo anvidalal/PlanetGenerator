@@ -60,7 +60,6 @@ function onLoad(framework) {
 
   // create geometry and add it to the scene
   var geom_icosa = new THREE.IcosahedronBufferGeometry(30, 5);
-  myMaterial.uniforms.reaction.value = react();
   //geom_icosa.translate(100, 0, 0);
   var myIcosa = new THREE.Mesh(geom_icosa, myMaterial);
   scene.add(myIcosa);
