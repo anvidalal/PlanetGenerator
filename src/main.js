@@ -37,7 +37,8 @@ var myMaterial = new THREE.ShaderMaterial({
     }
   },
   vertexShader: require('./shaders/my-vert.glsl'),
-  fragmentShader: require('./shaders/my-frag.glsl')
+  fragmentShader: require('./shaders/my-frag.glsl'),
+  lights: false
 });
 
 var cloudMaterial = new THREE.ShaderMaterial({
@@ -53,7 +54,8 @@ var cloudMaterial = new THREE.ShaderMaterial({
   },
   vertexShader: require('./shaders/cloud-vert.glsl'),
   fragmentShader: require('./shaders/cloud-frag.glsl'),
-  transparent: true
+  transparent: true,
+  lights: false
 });
 
 var grid;
@@ -75,11 +77,12 @@ function onLoad(framework) {
   // create geometry and add it to the scene
   var geom_icosa = new THREE.IcosahedronBufferGeometry(30, 5);
   myMaterial.uniforms.reaction.value = react();
+  //geom_icosa.translate(100, 0, 0);
   var myIcosa = new THREE.Mesh(geom_icosa, myMaterial);
   scene.add(myIcosa);
 
   //create cloud geometry and add to scene
-  var cloud_geom = new THREE.IcosahedronBufferGeometry(60, 5);
+  var cloud_geom = new THREE.IcosahedronBufferGeometry(50, 5);
   var cloud_mesh = new THREE.Mesh(cloud_geom, cloudMaterial);
   scene.add(cloud_mesh);
 
@@ -96,7 +99,7 @@ function onLoad(framework) {
     renderer.render(scene, camera);
   });
 
-  // add a slider to let user change persistence of noise 
+  // add a slider to let user change amplitude of noise 
   gui.add(input, 'amplitude', 0, 50).onChange(function () {
     myMaterial.uniforms.amplitude.value = input.amplitude;
     renderer.render(scene, camera);

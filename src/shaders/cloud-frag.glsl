@@ -1,6 +1,9 @@
 varying float noise;
 uniform sampler2D image;
 varying vec4 f_position;
+varying vec4 f_normal;
+varying vec4 f_OffsetPos;
+varying float amplitude;
 uniform float time;
 
 // Return a random direction in a circle
@@ -57,34 +60,21 @@ float trilinearInterpolation(vec3 pos) {
 
 
 void main() {
-	vec4 color = vec4(1, 1, 1, 1);//texture2D( image, vec2(1, noise));
+	vec4 color = vec4(1, 1, 1, 1);
     
     
-    // terrain noise calculation
-    float summedNoise = 0.0;
     float amplitude = 40.0;//u_mountainHeight;
-    float val;
-    
-    for ( int i = 2; i <= 64; i += 2 ) {
-    
-        vec3 pos = vec3(f_position) *.05 * float(i);
-        val = trilinearInterpolation(pos);
-        summedNoise += val * amplitude;
-        amplitude *= .5;
-        
+
+    if(noise * amplitude > 47.0) {
+        //clouds
+        gl_FragColor = vec4(color.rgb, noise - .7);
     }
-  
+    else if(noise * amplitude > 45.0) {
+        gl_FragColor = vec4(color.rgb, noise - .9);
+    }
+    else {
+        //no clouds
+        gl_FragColor = vec4(color.rgb, .001);
+    }
 
-    val =  summedNoise  * .3;
-    vec4 offsetPos = vec4(val * f_position.rgb, 0.0);
-    float offset = val;
-
-    // water noise calculation (add in time later)
-    vec3 cloudPos = vec3(f_position * .05) * 16.0 * ((sin(time * .002) + 2.0)/4.0);
-    float cloudNoise = trilinearInterpolation(cloudPos * .1);
-    
-    
-    
-	gl_FragColor = vec4( color.rgb + noise, cloudNoise + .2);
-    //gl_FragColor = vec4(cloudNoise, 0, 1, 1);
 }
