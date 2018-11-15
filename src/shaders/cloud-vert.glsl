@@ -66,7 +66,7 @@ float pnoise(vec3 pos)
 }
 
 void main() {
-	noise = pnoise(position * .5 + .3 * vec3(time, time, time)) - 0.5;
+	noise = pnoise(position * .7 + .3 * vec3(time, time, time)) - 0.5;
   
   float amplitude = 10.0;
 
