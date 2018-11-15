@@ -60,7 +60,7 @@ float pnoise(vec3 pos)
 	for (int i = 0; i < 16; ++i)
 	{
 		float fq = pow(2.0, float(i));
-		float a = pow(0.59, float(i));
+		float a = pow(0.61, float(i));
 
 		total += noise_interpolate(pos, fq) * a;
 	}
@@ -68,8 +68,8 @@ float pnoise(vec3 pos)
 }
 
 void main() {
-	float noise = pnoise(position) - 0.5;
-  float react = (texture2D( reaction, uv)).r - 0.2;
+	float noise = clamp((pnoise(position) - 1.1) * 2.5, 0.0, 1.0);
+  float react = clamp((texture2D( reaction, uv)).r - 0.2, 0.0, 1.0);
 
   float noise_contribution = noise_reaction_balance;
 
@@ -82,8 +82,8 @@ void main() {
     noise_contribution = 1.0;
 	}
 
-  height = react * (1.0 - noise_contribution) + noise * noise_contribution;
+  height = lerp(react, noise, noise_contribution);
   
-  vec3 p = position + height * amplitude * normalize(normal);
+  vec3 p = position + amplitude * height * normalize(normal);
   gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
 }

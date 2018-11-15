@@ -10,7 +10,7 @@ var k = 0.065;
 
 var width = 200;
 var height = 200;
-var iterations = 400;
+var iterations = 300;
 
 function react() {
     // initialize grid and next
@@ -35,7 +35,7 @@ function react() {
 function iterateReaction(numIterations) {
     // randomly add craters
     for (var t = 0; t < numIterations; t++) {
-        if (Math.random() < 0.1) {
+        if (Math.random() < 0.2) {
             blob(Math.floor(Math.random() * width),
                 Math.floor(Math.random() * height),
                 Math.floor(Math.random() * 20));
