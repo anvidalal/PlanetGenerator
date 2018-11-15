@@ -1,9 +1,5 @@
 varying float noise;
 uniform sampler2D image;
-varying vec4 f_position;
-varying vec4 f_normal;
-varying vec4 f_OffsetPos;
-varying float amplitude;
 uniform float time;
 
 // Return a random direction in a circle

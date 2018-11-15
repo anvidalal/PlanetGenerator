@@ -1,9 +1,5 @@
 varying float noise;
-varying float amplitude;
 uniform float time;
-varying vec4 f_position;
-varying vec4 f_normal;
-varying vec4 f_OffsetPos;
 float M_PI = 3.14159265359;
 
 float noise_gen(vec3 pos)
@@ -72,11 +68,9 @@ float pnoise(vec3 pos)
 void main() {
 	noise = pnoise(position * .5 + .3 * vec3(time, time, time)) - 0.5;
   
-  amplitude = 10.0;
+  float amplitude = 10.0;
 
-  f_normal = vec4(normalize(normal), 1.0);
-  f_position = vec4( position, 1.0 );
-	vec3 p = f_position.rgb + noise * amplitude * normalize(normal);
+	vec3 p = position.rgb + noise * amplitude * normalize(normal);
 	
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
 }

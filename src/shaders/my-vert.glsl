@@ -1,5 +1,6 @@
-varying float noise;
+varying float height;
 uniform float amplitude;
+uniform sampler2D reaction;
 float M_PI = 3.14159265359;
 
 float noise_gen(vec3 pos)
@@ -66,7 +67,21 @@ float pnoise(vec3 pos)
 }
 
 void main() {
-	noise = pnoise(position) - 0.5;	
-  vec3 p = position + noise * amplitude * normalize(normal);
-	gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
+	float noise = pnoise(position) - 0.5;
+  float react = (texture2D( reaction, uv)).r;
+  float noise_contribution = 0.7;
+
+  // preventing stitch
+  if (uv.x < 0.05 || uv.x > 0.95 || uv.y < 0.05 || uv.y > 0.95) {
+    float m = (max(abs(uv.x - 0.5), abs(uv.y - 0.5)) - 0.45) / 0.05;
+    noise_contribution += (1.0 - noise_contribution) * m;
+	}
+  if (uv.x < 0.01 || uv.x > 0.99 || uv.y < 0.01 || uv.y > 0.99) {
+    noise_contribution = 1.0;
+	}
+
+  height = react * (1.0 - noise_contribution) + noise * noise_contribution;
+  
+  vec3 p = position + height * amplitude * normalize(normal);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
 }
