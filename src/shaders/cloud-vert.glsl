@@ -66,11 +66,9 @@ float pnoise(vec3 pos)
 }
 
 void main() {
-	noise = pnoise(position * .5 + .3 * vec3(time, time, time)) - 0.5;
+	noise = pnoise(position * .5 + .3 * vec3(time, time, time)) - 1.1;
   
-  float amplitude = 10.0;
-
-	vec3 p = position.rgb + noise * amplitude * normalize(normal);
+  vec3 p = position + noise * 5.0 * normalize(normal);
 	
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
 }

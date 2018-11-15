@@ -1,5 +1,6 @@
 varying float height;
 uniform float amplitude;
+uniform float noise_reaction_balance;
 uniform sampler2D reaction;
 float M_PI = 3.14159265359;
 
@@ -68,8 +69,9 @@ float pnoise(vec3 pos)
 
 void main() {
 	float noise = pnoise(position) - 0.5;
-  float react = (texture2D( reaction, uv)).r;
-  float noise_contribution = 0.7;
+  float react = (texture2D( reaction, uv)).r - 0.2;
+
+  float noise_contribution = noise_reaction_balance;
 
   // preventing stitch
   if (uv.x < 0.05 || uv.x > 0.95 || uv.y < 0.05 || uv.y > 0.95) {
