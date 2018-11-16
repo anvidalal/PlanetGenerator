@@ -12,12 +12,12 @@ var input = {
   radius: 50.0,
   cloud_density: 0.5,
   cloud_speed: .3,
-  cloud_color: [255.0, 255.0, 255.0],
-  color1: [19, 12, 140],
-  color2: [13, 31, 170],
-  color3: [25, 104, 14],
-  color4: [9, 79, 0],
-  color5: [81, 51, 6],
+  cloud_color: '#ffffff',
+  color1: '#130c8c',
+  color2: '#0d1faa',
+  color3: '#19680e',
+  color4: '#a79300',
+  color5: '#caa62f'
 };
 
 var reaction_texture = Reaction.getTexture();
@@ -70,7 +70,7 @@ var cloudMaterial = new THREE.ShaderMaterial({
     },
     cloud_color: {
       type: "v3",
-      value: input.cloud_color
+      value: new THREE.Color(input.cloud_color)
     }
   },
   vertexShader: require('./shaders/cloud-vert.glsl'),
@@ -104,7 +104,7 @@ function onLoad(framework) {
   scene.background = background_texture;
 
 
-  //PLANET CONTROLS
+  // PLANET CONTROLS
   var planetFolder = gui.addFolder('planet');
 
   // add a slider to let user change radius of icosahedron
@@ -145,7 +145,7 @@ function onLoad(framework) {
   });
 
 
-  //CLOUD CONTROLS
+  // CLOUD CONTROLS
   var cloudsFolder = gui.addFolder('clouds');
 
   // add a slider to let user change balance between noise and reaction diffusion
@@ -160,10 +160,8 @@ function onLoad(framework) {
   });
 
   cloudsFolder.addColor(input, 'cloud_color').onChange(function () {
-    cloudMaterial.uniforms.cloud_color.value = input.cloud_color;
+    cloudMaterial.uniforms.cloud_color.value = new THREE.Color(input.cloud_color);
     renderer.render(scene, camera);
-    // console.log(input.cloud_color);
-    // console.log(cloudMaterial.uniforms.cloud_color.value);
   });
 
   // add a checkbox to toggle cloud visibility
@@ -172,7 +170,7 @@ function onLoad(framework) {
   });
 
 
-  //COLOR CONTROLS
+  // COLOR CONTROLS
   var gradientFolder = planetFolder.addFolder('planet_gradient');
 
   for (var i = 1; i <= getColors().length; i++) {
@@ -184,7 +182,6 @@ function onLoad(framework) {
       renderer.render(scene, camera);
     });
   }
-
   renderer.render(scene, camera);
 }
 
@@ -197,7 +194,11 @@ function getCloudRadius() {
 }
 
 function getColors() {
-  return [input.color1, input.color2, input.color3, input.color4, input.color5];
+  return [new THREE.Color(input.color1),
+  new THREE.Color(input.color2),
+  new THREE.Color(input.color3),
+  new THREE.Color(input.color4),
+  new THREE.Color(input.color5)];
 }
 
 // called on frame updates

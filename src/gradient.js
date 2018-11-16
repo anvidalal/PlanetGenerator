@@ -1,11 +1,13 @@
 const THREE = require('three');
 
-function lerp(color1, color2, t) {
-    var result = [0, 0, 0];
-    for (var i = 0; i < 3; i++) {
-        result[i] = color1[i] * (1 - t) + color2[i] * t;
-    }
-    return result;
+function lerp(x, y, t) {
+    return x * (1 - t) + y * t;
+}
+
+function lerp_colors(color1, color2, t) {
+    return new THREE.Color(lerp(color1.r, color2.r, t),
+        lerp(color1.g, color2.g, t),
+        lerp(color1.b, color2.b, t));
 }
 
 function createGradient(colors, width, height) {
@@ -14,11 +16,12 @@ function createGradient(colors, width, height) {
     for (var i = 0; i < colors.length - 1; i++) {
         var lower = (i * data.length / ((colors.length - 1) * 3.0)) * 3.0;
         var upper = ((i + 1) * data.length / ((colors.length - 1) * 3.0)) * 3.0;
-        for (var j = lower; j < upper; j+= 3) {
-            var c = lerp(colors[i], colors[i + 1], (j - lower) / (upper - lower));
-            data[j] = c[0];
-            data[j + 1] = c[1];
-            data[j + 2] = c[2];
+        for (var j = lower; j < upper; j += 3) {
+            var t = (j - lower) / (upper - lower);
+            var color = lerp_colors(colors[i], colors[i + 1], t);
+            data[j] = color.r * 255;
+            data[j + 1] = color.g * 255;
+            data[j + 2] = color.b * 255;
         }
     }
     return data;
