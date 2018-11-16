@@ -1,5 +1,7 @@
 varying float noise;
 uniform float time;
+uniform vec3 cloud_color;
+uniform float cloud_speed;
 float M_PI = 3.14159265359;
 
 float noise_gen(vec3 pos)
@@ -66,9 +68,7 @@ float pnoise(vec3 pos)
 }
 
 void main() {
-  //noise = pnoise(position * .7 + .3 * vec3(time, time, time)) - 0.5;
-
-	noise = pnoise(position * .5 + .3 * vec3(time, time, time)) - 1.1;
+	noise = pnoise(position * .5 + cloud_speed * vec3(time, time, time)) - 1.1;
  
   vec3 p = position + noise * 5.0 * normalize(normal);
 	

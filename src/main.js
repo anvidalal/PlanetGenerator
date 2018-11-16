@@ -11,6 +11,8 @@ var input = {
   amplitude: 20.0,
   radius: 50.0,
   cloud_density: 0.5,
+  cloud_speed: .3,
+  cloud_color: [255.0, 255.0, 255.0],
   color1: [19, 12, 140],
   color2: [13, 31, 170],
   color3: [44, 79, 142],
@@ -23,6 +25,8 @@ reaction_texture.needsUpdate = true;
 
 var gradient_texture = Gradient.getTexture(getColors());
 gradient_texture.needsUpdate = true;
+
+
 
 var background_texture = new THREE.TextureLoader().load('space.jpg');
 
@@ -52,10 +56,6 @@ var planetMaterial = new THREE.ShaderMaterial({
 
 var cloudMaterial = new THREE.ShaderMaterial({
   uniforms: {
-    inclination: {
-      type: "v3",
-      value: new THREE.Vector3(0, 0, 0)
-    },
     time: {
       type: "float",
       value: currTime
@@ -63,6 +63,14 @@ var cloudMaterial = new THREE.ShaderMaterial({
     cloud_density: {
       type: "float",
       value: input.cloud_density
+    },
+    cloud_speed: {
+      type: "float",
+      value: input.cloud_speed
+    },
+    cloud_color: {
+      type: "v3",
+      value: input.cloud_color
     }
   },
   vertexShader: require('./shaders/cloud-vert.glsl'),
@@ -95,6 +103,8 @@ function onLoad(framework) {
   // set scene background
   scene.background = background_texture;
 
+
+  //PLANET CONTROLS
   var planetFolder = gui.addFolder('planet');
 
   // add a slider to let user change radius of icosahedron
@@ -105,9 +115,10 @@ function onLoad(framework) {
     planetMaterial.uniforms.amplitude.value = getAmplitude();
     scene.add(planet_mesh);
 
+
+    scene.remove(cloud_mesh);
+    cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(getCloudRadius(), detail), cloudMaterial);
     if (input.cloud_visibility) {
-      scene.remove(cloud_mesh);
-      cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(getCloudRadius(), detail), cloudMaterial);
       scene.add(cloud_mesh);
     }
     renderer.render(scene, camera);
@@ -124,14 +135,17 @@ function onLoad(framework) {
     // planetMaterial.uniforms.amplitude.value = getAmplitude();
     planetMaterial.uniforms.amplitude.value = getAmplitude();
     var detail = cloud_mesh.geometry.parameters.detail;
+
+    scene.remove(cloud_mesh);
+    cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(getCloudRadius(), detail), cloudMaterial);
     if (input.cloud_visibility) {
-      scene.remove(cloud_mesh);
-      cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(getCloudRadius(), detail), cloudMaterial);
       scene.add(cloud_mesh);
     }
     renderer.render(scene, camera);
   });
 
+
+  //CLOUD CONTROLS
   var cloudsFolder = gui.addFolder('clouds');
 
   // add a slider to let user change balance between noise and reaction diffusion
@@ -140,12 +154,26 @@ function onLoad(framework) {
     renderer.render(scene, camera);
   });
 
+  cloudsFolder.add(input, 'cloud_speed', 0, 2).onChange(function () {
+    cloudMaterial.uniforms.cloud_speed.value = input.cloud_speed;
+    renderer.render(scene, camera);
+  });
+
+  cloudsFolder.addColor(input, 'cloud_color').onChange(function () {
+    cloudMaterial.uniforms.cloud_color.value = input.cloud_color;
+    renderer.render(scene, camera);
+    // console.log(input.cloud_color);
+    // console.log(cloudMaterial.uniforms.cloud_color.value);
+  });
+
   // add a checkbox to toggle cloud visibility
   cloudsFolder.add(input, 'cloud_visibility').onChange(function () {
     input.cloud_visibility ? scene.add(cloud_mesh) : scene.remove(cloud_mesh);
   });
 
-  var gradientFolder = gui.addFolder('gradient');
+
+  //COLOR CONTROLS
+  var gradientFolder = planetFolder.addFolder('planet_gradient');
 
   for (var i = 1; i <= getColors().length; i++) {
     var color = "color" + i;

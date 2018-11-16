@@ -1,6 +1,7 @@
 varying float height;
 uniform float amplitude;
 uniform float noise_reaction_balance;
+
 uniform sampler2D reaction;
 float M_PI = 3.14159265359;
 
