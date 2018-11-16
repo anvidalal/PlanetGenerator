@@ -15,9 +15,9 @@ var input = {
   cloud_color: [255.0, 255.0, 255.0],
   color1: [19, 12, 140],
   color2: [13, 31, 170],
-  color3: [44, 79, 142],
-  color4: [63, 102, 29],
-  color5: [172, 145, 81],
+  color3: [25, 104, 14],
+  color4: [9, 79, 0],
+  color5: [81, 51, 6],
 };
 
 var reaction_texture = Reaction.getTexture();
