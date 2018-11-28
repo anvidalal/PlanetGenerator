@@ -4,12 +4,13 @@ import Reaction from './reaction'
 import Gradient from './gradient'
 
 var currTime = 0;
+var solarSystem; 
 
 var input = {
   cloud_visibility: true,
-  noise_reaction_balance: 0.45,
+  noise_reaction_balance: 0.5,
   amplitude: 20.0,
-  radius: 50.0,
+  radius: 150.0,
   cloud_density: 0.5,
   cloud_speed: .3,
   cloud_color: '#ffffff',
@@ -84,9 +85,12 @@ var cloudMaterial = new THREE.ShaderMaterial({
 function onLoad(framework) {
   var { scene, camera, renderer, gui } = framework;
 
+  solarSystem = new List();
+
   // create geometry and add it to the scene
   var planet_geom = new THREE.IcosahedronBufferGeometry(input.radius, 5);
   var planet_mesh = new THREE.Mesh(planet_geom, planetMaterial);
+  solarSystem.append(planet_mesh);
   scene.add(planet_mesh);
 
   //create cloud geometry and add to scene
@@ -97,7 +101,7 @@ function onLoad(framework) {
   }
 
   // set camera position
-  camera.position.set(15, 15, 200);
+  camera.position.set(15, 15, 400);
   camera.lookAt(new THREE.Vector3(0, 0, 0));
 
   // set scene background
@@ -108,7 +112,7 @@ function onLoad(framework) {
   var planetFolder = gui.addFolder('planet');
 
   // add a slider to let user change radius of icosahedron
-  planetFolder.add(input, 'radius', 20, 100).onChange(function (newVal) {
+  planetFolder.add(input, 'radius', 100, 200).onChange(function (newVal) {
     var detail = planet_mesh.geometry.parameters.detail;
     scene.remove(planet_mesh);
     planet_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(newVal, detail), planetMaterial);
@@ -154,7 +158,7 @@ function onLoad(framework) {
     renderer.render(scene, camera);
   });
 
-  cloudsFolder.add(input, 'cloud_speed', 0, 2).onChange(function () {
+  cloudsFolder.add(input, 'cloud_speed', 0, 1).step(.1).onChange(function () {
     cloudMaterial.uniforms.cloud_speed.value = input.cloud_speed;
     renderer.render(scene, camera);
   });
