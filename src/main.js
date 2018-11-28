@@ -85,12 +85,12 @@ var cloudMaterial = new THREE.ShaderMaterial({
 function onLoad(framework) {
   var { scene, camera, renderer, gui } = framework;
 
-  solarSystem = new List();
+  //solarSystem = new List();
 
   // create geometry and add it to the scene
   var planet_geom = new THREE.IcosahedronBufferGeometry(input.radius, 5);
   var planet_mesh = new THREE.Mesh(planet_geom, planetMaterial);
-  solarSystem.append(planet_mesh);
+  //solarSystem.append(planet_mesh);
   scene.add(planet_mesh);
 
   //create cloud geometry and add to scene
