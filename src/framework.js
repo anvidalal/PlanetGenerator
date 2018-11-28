@@ -4,6 +4,17 @@ const OrbitControls = require('three-orbit-controls')(THREE)
 import Stats from 'stats-js'
 import DAT from 'dat-gui'
 
+DAT.GUI.prototype.removeFolder = function(name) {
+  var folder = this.__folders[name];
+  if (!folder) {
+    return;
+  }
+  folder.close();
+  this.__ul.removeChild(folder.domElement.parentNode);
+  delete this.__folders[name];
+  this.onResize();
+}
+
 // when the scene is done initializing, the function passed as `callback` will be executed
 // then, every frame, the function passed as `update` will be executed
 function init(callback, update) {
