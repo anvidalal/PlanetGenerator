@@ -41,7 +41,7 @@ function Planet(mass, radius, position, velocity, scale) {
     }
 
     planet.getCloudRadius = function () {
-        return planet.input.radius + planet.getAmplitude() * 0.65;
+        return planet.input.radius + planet.getAmplitude() * 0.85;
     }
 
     planet.gradient_texture = Gradient.getTexture(planet.getColors());
