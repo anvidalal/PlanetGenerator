@@ -13,7 +13,7 @@ function Planet(mass, radius, position, velocity, scale) {
     planet.input = {
         cloud_visibility: false,
         noise_reaction_balance: 0.5,
-        amplitude: 20.0,
+        amplitude: radius / 20.0 * 0.25,
         radius: radius / 20.0,
         cloud_density: 0.5,
         cloud_speed: .3,
@@ -122,12 +122,18 @@ function Planet(mass, radius, position, velocity, scale) {
         }
     }
 
+    planet.rlow = planet.input.radius * 0.9;
+    planet.rhigh = planet.input.radius * 1.1;
+
+    planet.alow = 0;
+    planet.ahigh = planet.input.amplitude * 1.5;
+
     planet.addControls = function (scene, camera, renderer, gui) {
         // PLANET CONTROLS
         var planetFolder = gui.addFolder('planet');
 
         // add a slider to let user change radius of icosahedron
-        planetFolder.add(planet.input, 'radius', 100, 200).onChange(function (newVal) {
+        planetFolder.add(planet.input, 'radius', planet.rlow, planet.rhigh).onChange(function (newVal) {
             var detail = planet.planet_mesh.geometry.parameters.detail;
             scene.remove(planet.planet_mesh);
             planet.planet_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(newVal, detail), planet.planetMaterial);
@@ -140,7 +146,7 @@ function Planet(mass, radius, position, velocity, scale) {
             if (planet.input.cloud_visibility) {
                 scene.add(planet.cloud_mesh);
             }
-            planet.setPosition(planet.position);
+            planet.updatePosition();
             renderer.render(scene, camera);
         });
 
@@ -151,8 +157,7 @@ function Planet(mass, radius, position, velocity, scale) {
         });
 
         // add a slider to let user change balance between noise and reaction diffusion
-        planetFolder.add(planet.input, 'amplitude', 0, 30).onChange(function () {
-            // planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+        planetFolder.add(planet.input, 'amplitude', planet.alow, planet.ahigh).onChange(function () {
             planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
             var detail = planet.cloud_mesh.geometry.parameters.detail;
 
@@ -161,7 +166,7 @@ function Planet(mass, radius, position, velocity, scale) {
             if (planet.input.cloud_visibility) {
                 scene.add(planet.cloud_mesh);
             }
-            planet.setPosition(planet.position);
+            planet.updatePosition();
             renderer.render(scene, camera);
         });
 
@@ -199,7 +204,7 @@ function Planet(mass, radius, position, velocity, scale) {
 
         // add a checkbox to toggle cloud visibility
         cloudsFolder.add(planet.input, 'cloud_visibility').onChange(function () {
-            planet.setPosition(planet.position);
+            planet.updatePosition();
             planet.input.cloud_visibility ? scene.add(planet.cloud_mesh) : scene.remove(planet.cloud_mesh);
         });
     }
