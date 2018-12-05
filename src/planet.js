@@ -2,14 +2,19 @@ const THREE = require('three');
 import Reaction from './reaction'
 import Gradient from './gradient'
 
-function Planet() {
+function Planet(mass, radius, position, velocity, scale) {
     var planet = this;
-    
+
+    planet.mass = mass;
+    planet.radius = radius;
+    planet.position = position;
+    planet.velocity = velocity;
+
     planet.input = {
-        cloud_visibility: true,
+        cloud_visibility: false,
         noise_reaction_balance: 0.5,
         amplitude: 20.0,
-        radius: 150.0,
+        radius: radius / 20.0,
         cloud_density: 0.5,
         cloud_speed: .3,
         cloud_color: '#ffffff',
@@ -23,7 +28,7 @@ function Planet() {
     planet.reaction_texture = Reaction.getTexture();
     planet.reaction_texture.needsUpdate = true;
 
-    planet.getColors = function() {
+    planet.getColors = function () {
         return [new THREE.Color(planet.input.color1),
         new THREE.Color(planet.input.color2),
         new THREE.Color(planet.input.color3),
@@ -31,11 +36,11 @@ function Planet() {
         new THREE.Color(planet.input.color5)];
     }
 
-    planet.getAmplitude = function() {
+    planet.getAmplitude = function () {
         return planet.input.amplitude > planet.input.radius * 0.5 ? planet.input.radius * 0.5 : planet.input.amplitude;
     }
 
-    planet.getCloudRadius = function() {
+    planet.getCloudRadius = function () {
         return planet.input.radius + planet.getAmplitude() * 0.65;
     }
 
@@ -97,21 +102,27 @@ function Planet() {
     var cloud_geom = new THREE.IcosahedronBufferGeometry(planet.getCloudRadius(), 5);
     planet.cloud_mesh = new THREE.Mesh(cloud_geom, planet.cloudMaterial);
 
-    planet.setPosition = function(position) {
-        planet.position = position;
-        planet.planet_mesh.position.set(position.x, position.y, position.z);
-        planet.cloud_mesh.position.set(position.x, position.y, position.z);
+    planet.updatePosition = function () {
+        position = planet.position;
+        planet.planet_mesh.position.set(
+            position.x / scale,
+            position.y / scale,
+            position.z / scale);
+        planet.cloud_mesh.position.set(
+            position.x / scale,
+            position.y / scale,
+            position.z / scale);
     }
 
-    planet.addPlanet = function(scene, position) {
-        planet.setPosition(position);
+    planet.addPlanet = function (scene) {
+        planet.updatePosition();
         scene.add(planet.planet_mesh);
         if (planet.input.cloud_visibility) {
             scene.add(planet.cloud_mesh);
         }
     }
 
-    planet.addControls = function(scene, camera, renderer, gui) {
+    planet.addControls = function (scene, camera, renderer, gui) {
         // PLANET CONTROLS
         var planetFolder = gui.addFolder('planet');
 
@@ -193,14 +204,51 @@ function Planet() {
         });
     }
 
-    planet.removeControls = function(gui) {
+    planet.removeControls = function (gui) {
         gui.removeFolder("planet");
         gui.removeFolder("clouds");
     }
 
-    planet.updateTime = function(time) {
+    planet.updateTime = function (time) {
         planet.cloudMaterial.uniforms.time.value = time;
     }
+
+    planet.distanceToVector = function (b) {
+        return new THREE.Vector3(
+            b.position.x - planet.position.x,
+            b.position.y - planet.position.y,
+            b.position.z - planet.position.z);
+    }
+
+    planet.distanceToValue = function (b) {
+        return planet.distanceToVector(b).length();
+    }
+
+    planet.forceValue = function (b) {
+        var dist = planet.distanceToValue(b);
+        if (dist == 0.0) {
+            return new THREE.Vector3();
+        }
+        return (6.67e-11 * planet.mass * b.mass) / (dist * dist);
+    }
+
+    planet.forceVector = function (b) {
+        return planet.distanceToVector(b).multiplyScalar(
+            planet.forceValue(b) / planet.distanceToValue(b));
+    }
+
+    planet.incrementPosition = function (dt) {
+        planet.position.add(new THREE.Vector3(
+            planet.velocity.x * dt,
+            planet.velocity.y * dt,
+            planet.velocity.z * dt));
+        planet.updatePosition();
+    }
+
+    planet.getAffectedBy = function (b, dt) {
+        planet.velocity.add(planet.forceVector(b).multiplyScalar(dt / planet.mass));
+    }
+
     return this;
 }
 
