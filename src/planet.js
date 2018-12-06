@@ -2,13 +2,14 @@ const THREE = require('three');
 import Reaction from './reaction'
 import Gradient from './gradient'
 
-function Planet(mass, radius, position, velocity, scale) {
+function Planet(mass, radius, position, velocity, scale, numPlanets) {
     var planet = this;
 
     planet.mass = mass;
     planet.radius = radius;
     planet.position = position;
     planet.velocity = velocity;
+    planet.name = "planet" + numPlanets;
 
     planet.input = {
         cloud_visibility: true,
@@ -125,7 +126,7 @@ function Planet(mass, radius, position, velocity, scale) {
 
     planet.addControls = function (scene, camera, renderer, gui) {
         // PLANET CONTROLS
-        var planetFolder = gui.addFolder('planet');
+        var planetFolder = gui.addFolder(planet.name);
 
         planetFolder.add(planet.input, 'radius', planet.rlow, planet.rhigh).onChange(function (newVal) {
             var detail = planet.planet_mesh.geometry.parameters.detail;
@@ -157,8 +158,10 @@ function Planet(mass, radius, position, velocity, scale) {
             renderer.render(scene, camera);
         });
 
+       
+
         // COLOR CONTROLS
-        var gradientFolder = planetFolder.addFolder('planet_gradient');
+        var gradientFolder = planetFolder.addFolder(planet.name + '_gradient');
 
         for (var i = 1; i <= planet.getColors().length; i++) {
             var color = "color" + i;
@@ -171,7 +174,7 @@ function Planet(mass, radius, position, velocity, scale) {
         }
 
         // CLOUD CONTROLS
-        var cloudsFolder = gui.addFolder('clouds');
+        var cloudsFolder = planetFolder.addFolder(planet.name + '_clouds');
 
         cloudsFolder.add(planet.input, 'cloud_density', 0, 1).onChange(function () {
             planet.cloudMaterial.uniforms.cloud_density.value = planet.input.cloud_density;
@@ -199,6 +202,8 @@ function Planet(mass, radius, position, velocity, scale) {
         gui.removeFolder("planet");
         gui.removeFolder("clouds");
     }
+
+
 
     planet.updateTime = function (time) {
         planet.cloudMaterial.uniforms.time.value = time;
@@ -228,11 +233,13 @@ function Planet(mass, radius, position, velocity, scale) {
             planet.forceValue(b) / planet.distanceToValue(b));
     }
 
-    planet.incrementPosition = function (dt) {
-        planet.position.add(new THREE.Vector3(
-            planet.velocity.x * dt,
-            planet.velocity.y * dt,
-            planet.velocity.z * dt));
+    planet.incrementPosition = function (dt, orbiting) {
+        if(orbiting) {
+            planet.position.add(new THREE.Vector3(
+                planet.velocity.x * dt,
+                planet.velocity.y * dt,
+                planet.velocity.z * dt));
+        }
         planet.updatePosition();
     }
 
