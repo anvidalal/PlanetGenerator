@@ -7,22 +7,25 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
 
     planet.mass = mass;
     planet.radius = radius;
-    planet.position = position;
-    planet.velocity = velocity;
+    planet.position = new THREE.Vector3(0, 0, 0);
+    planet.velocity = new THREE.Vector3(0, 0, 0);
     planet.name = "planet" + numPlanets;
+    planet.orbitPos = position;
+    planet.orbitVel = velocity;
 
     planet.input = {
         cloud_visibility: true,
         amplitude: radius / 20.0 * 0.25,
         radius: radius / 20.0,
-        cloud_density: 0.5,
+        cloud_density: 0.43,
         cloud_speed: .3,
         cloud_color: '#ffffff',
         color1: '#130c8c',
         color2: '#0d1faa',
-        color3: '#19680e',
-        color4: '#a79300',
-        color5: '#caa62f'
+        color3: '#0d6823', //'#19680e',
+        color4: '#5f691a', //'#a79300',
+        color5: '#503e06', //'#caa62f',
+        preset: 'earth'
     };
 
     planet.reaction_texture = Reaction.getTexture();
@@ -67,6 +70,8 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
         lights: false
     });
 
+
+
     planet.cloudMaterial = new THREE.ShaderMaterial({
         uniforms: {
             time: {
@@ -92,12 +97,16 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
         lights: false
     });
 
+
+
     var planet_geom = new THREE.IcosahedronBufferGeometry(planet.input.radius, 5);
     planet.planet_mesh = new THREE.Mesh(planet_geom, planet.planetMaterial);
 
     var cloud_geom = new THREE.IcosahedronBufferGeometry(planet.getCloudRadius(), 5);
     planet.cloud_mesh = new THREE.Mesh(cloud_geom, planet.cloudMaterial);
 
+
+    
     planet.updatePosition = function () {
         position = planet.position;
         planet.planet_mesh.position.set(
@@ -118,13 +127,15 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
         }
     }
 
+
+
     planet.rlow = planet.input.radius * 0.9;
     planet.rhigh = planet.input.radius * 1.1;
 
     planet.alow = 0;
     planet.ahigh = planet.input.amplitude * 1.5;
 
-    planet.addControls = function (scene, camera, renderer, gui) {
+    planet.addControls = function (scene, camera, renderer, gui, orbiting) {
         // PLANET CONTROLS
         var planetFolder = gui.addFolder(planet.name);
 
@@ -173,10 +184,18 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
             });
         }
 
+
+
         // CLOUD CONTROLS
         var cloudsFolder = planetFolder.addFolder(planet.name + '_clouds');
 
-        cloudsFolder.add(planet.input, 'cloud_density', 0, 1).onChange(function () {
+        // add a checkbox to toggle cloud visibility
+        cloudsFolder.add(planet.input, 'cloud_visibility').onChange(function () {
+            planet.updatePosition();
+            planet.input.cloud_visibility ? scene.add(planet.cloud_mesh) : scene.remove(planet.cloud_mesh);
+        });
+
+        cloudsFolder.add(planet.input, 'cloud_density', 0, .6).onChange(function () {
             planet.cloudMaterial.uniforms.cloud_density.value = planet.input.cloud_density;
             renderer.render(scene, camera);
         });
@@ -191,11 +210,168 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
             renderer.render(scene, camera);
         });
 
-        // add a checkbox to toggle cloud visibility
-        cloudsFolder.add(planet.input, 'cloud_visibility').onChange(function () {
-            planet.updatePosition();
-            planet.input.cloud_visibility ? scene.add(planet.cloud_mesh) : scene.remove(planet.cloud_mesh);
+        
+
+
+
+        //presets
+        var presetFolder = planetFolder.addFolder(planet.name + '_presets');
+
+        presetFolder.add(planet.input, 'preset', ['earth', 'gas_giant', 'terrestrial']).onChange(function (val) {
+            if(!orbiting) {
+                if(val == 'earth') {
+                    //medium atmosphere
+                    planet.input.cloud_visibility = true;
+                    planet.cloudMaterial.uniforms.cloud_visibility = true;
+                    planet.cloudMaterial.uniforms.cloud_density.value = .43;
+                    planet.input.cloud_density = .43;
+                    planet.cloudMaterial.uniforms.cloud_speed.value = .3;
+                    planet.input.cloud_speed = .3;
+
+                    //medium radius
+                    planet.input.radius = 300;
+                    scene.remove(planet.planet_mesh);
+                    var mesh_detail = planet.planet_mesh.geometry.parameters.detail;
+                    planet.planet_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(planet.input.radius, mesh_detail), planet.planetMaterial);
+                    planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+                    scene.add(planet.planet_mesh);
+
+                    //medium amplitude
+                    planet.input.amplitude = 90;
+                    planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+                    var cloud_detail = planet.cloud_mesh.geometry.parameters.detail;
+                    scene.remove(planet.cloud_mesh);
+                    planet.cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(planet.getCloudRadius(), cloud_detail), planet.cloudMaterial);
+                    if (planet.input.cloud_visibility) {
+                        scene.add(planet.cloud_mesh);
+                    }
+                    planet.updatePosition();
+                
+                    //blue/green/brown color
+                    planet.input.color1 = '#130c8c';
+                    planet.input.color2 = '#0d1faa';
+                    planet.input.color3 = '#0d6823';
+                    planet.input.color4 = '#5f691a';
+                    planet.input.color5 = '#503e06';
+                    planet.gradient_texture = Gradient.getTexture(planet.getColors());
+                    planet.gradient_texture.needsUpdate = true;
+                    planet.planetMaterial.uniforms.gradient.value = planet.gradient_texture;
+
+                     //cloud color
+                     planet.input.cloud_color = '#ffffff'
+                     planet.cloudMaterial.uniforms.cloud_color.value = new THREE.Color(planet.input.cloud_color);
+
+
+                    //medium distance from sun
+                    planet.orbitPos = new THREE.Vector3(1.496e11, 0, 0); 
+                    planet.orbitVel = new THREE.Vector3(0, 1.490e04, 0);
+                    planet.mass = 5.974e24;
+                    planet.radius = 6.371e3;
+                }
+
+                //densest atmosphere, far from sun, blue in color, largest radius, low amplitude
+                if(val == 'gas_giant') {
+                    //dense atmosphere
+                    planet.input.cloud_visibility = true;
+                    planet.cloudMaterial.uniforms.cloud_visibility = true;
+                    planet.cloudMaterial.uniforms.cloud_density.value = .6;
+                    planet.input.cloud_density = .7;
+                    planet.cloudMaterial.uniforms.cloud_speed.value = 1;
+                    planet.input.cloud_speed = 1;
+
+                    //big radius
+                    planet.input.radius = 350;
+                    scene.remove(planet.planet_mesh);
+                    var mesh_detail = planet.planet_mesh.geometry.parameters.detail;
+                    planet.planet_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(planet.input.radius, mesh_detail), planet.planetMaterial);
+                    planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+                    scene.add(planet.planet_mesh);
+        
+                    //low amplitude
+                    planet.input.amplitude = 0;
+                    planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+                    var cloud_detail = planet.cloud_mesh.geometry.parameters.detail;
+                    scene.remove(planet.cloud_mesh);
+                    planet.cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(planet.getCloudRadius(), cloud_detail), planet.cloudMaterial);
+                    if (planet.input.cloud_visibility) {
+                        scene.add(planet.cloud_mesh);
+                    }
+                    planet.updatePosition();
+
+                    //blue color
+                    planet.input.color1 = '#130c8c';
+                    planet.input.color2 = '#0d1faa';
+                    planet.input.color3 = '#281ec3';
+                    planet.input.color4 = '#0f0975';
+                    planet.input.color5 = '#2e41ca';
+                    planet.gradient_texture = Gradient.getTexture(planet.getColors());
+                    planet.gradient_texture.needsUpdate = true;
+                    planet.planetMaterial.uniforms.gradient.value = planet.gradient_texture;
+
+                    //cloud color
+                    planet.input.cloud_color = '#78c7ff'
+                    planet.cloudMaterial.uniforms.cloud_color.value = new THREE.Color(planet.input.cloud_color);
+                
+
+                    //far from sun
+                    planet.orbitPos = new THREE.Vector3(3.279e11, 0, 0); 
+                    planet.orbitVel = new THREE.Vector3(0, 1.205e04, 0);
+                    planet.mass = 6.419e23;
+                    planet.radius = 7.390e3;
+                }
+
+                //no atmosphere, closest to sun, red in color, smallest radius, high amplitude
+                else if(val == "terrestrial") {
+                    //no atmosphere
+                    planet.input.cloud_visibility = true;
+                    planet.cloudMaterial.uniforms.cloud_visibility = true;
+                    planet.cloudMaterial.uniforms.cloud_density.value = 0;
+                    planet.input.cloud_density = 0;
+
+                    //small radius
+                    planet.input.radius = 250;
+                    scene.remove(planet.planet_mesh);
+                    var mesh_detail = planet.planet_mesh.geometry.parameters.detail;
+                    planet.planet_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(planet.input.radius, mesh_detail), planet.planetMaterial);
+                    planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+                    scene.add(planet.planet_mesh);
+
+                    //high amplitude
+                    planet.input.amplitude = 120;
+                    planet.planetMaterial.uniforms.amplitude.value = planet.getAmplitude();
+                    var cloud_detail = planet.cloud_mesh.geometry.parameters.detail;
+                    scene.remove(planet.cloud_mesh);
+                    planet.cloud_mesh = new THREE.Mesh(new THREE.IcosahedronBufferGeometry(planet.getCloudRadius(), cloud_detail), planet.cloudMaterial);
+                    if (planet.input.cloud_visibility) {
+                        scene.add(planet.cloud_mesh);
+                    }
+                    planet.updatePosition();
+
+                    //red color
+                    planet.input.color1 = '#72290b';
+                    planet.input.color2 = '#b64c20';
+                    planet.input.color3 = '#723409';
+                    planet.input.color4 = '#521d00';
+                    planet.input.color5 = '#4a0501';
+                    planet.gradient_texture = Gradient.getTexture(planet.getColors());
+                    planet.gradient_texture.needsUpdate = true;
+                    planet.planetMaterial.uniforms.gradient.value = planet.gradient_texture;
+
+                     //cloud color
+                     planet.input.cloud_color = '#ffffff'
+                     planet.cloudMaterial.uniforms.cloud_color.value = new THREE.Color(planet.input.cloud_color);
+
+                    //close to sun
+                    planet.orbitPos = new THREE.Vector3(5.790e10, 0, 0); 
+                    planet.orbitVel = new THREE.Vector3(0, 2.395e04, 0);
+                    planet.mass = 3.302e23;
+                    planet.radius = 2.240e3;
+                }
+                renderer.render(scene, camera);
+            }
         });
+
+
     }
 
     planet.removeControls = function (gui) {
@@ -233,13 +409,11 @@ function Planet(mass, radius, position, velocity, scale, numPlanets) {
             planet.forceValue(b) / planet.distanceToValue(b));
     }
 
-    planet.incrementPosition = function (dt, orbiting) {
-        if(orbiting) {
-            planet.position.add(new THREE.Vector3(
-                planet.velocity.x * dt,
-                planet.velocity.y * dt,
-                planet.velocity.z * dt));
-        }
+    planet.incrementPosition = function (dt) {
+        planet.position.add(new THREE.Vector3(
+            planet.velocity.x * dt,
+            planet.velocity.y * dt,
+            planet.velocity.z * dt));
         planet.updatePosition();
     }
 

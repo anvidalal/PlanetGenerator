@@ -1,18 +1,20 @@
 const THREE = require('three');
 import Framework from './framework'
 import Space from './planet_simulator'
+import planet from './planet';
 
 var currTime = 0;
 var background_texture = new THREE.TextureLoader().load('space.jpg');
-var scene, camera, renderer, gui;
+var scene, camera, renderer, gui, controls;
 var orbiting = false;
+var currView = 1;
 
 var space = new Space.Space();
 
 var input = {
   orbiting: false,
-  
-  addPlanet: function() {space.addNewPlanet(scene, camera, renderer, gui)}
+  addPlanet: function() {if(!orbiting) {space.addNewPlanet(scene, camera, renderer, gui, orbiting)}},
+  viewPlanet: 1
 
 }
 // called after the scene loads
@@ -21,6 +23,7 @@ function onLoad(framework) {
   camera = framework.camera;
   renderer = framework.renderer;
   gui = framework.gui;
+  controls = framework.controls;
 
   //main controls
   var mainFolder = gui.addFolder('main');
@@ -28,39 +31,79 @@ function onLoad(framework) {
   mainFolder.add(input, 'orbiting').onChange(function () {
     orbiting = !orbiting;
 
-    space.bodies[1].position = new THREE.Vector3(1.496e11, 0.000e00, 0.000e00);
-    space.bodies[1].velocity = new THREE.Vector3(0.000e00, 1.490e04, 0.000e00);
-
     if(orbiting) {
-      camera.position.set(500, 0, 8000);
+      for(var i = 1; i < space.bodies.length; i++) {
+        space.bodies[i].position = space.bodies[i].orbitPos; 
+        space.bodies[i].velocity = space.bodies[i].orbitVel; 
+        
+      }
+
+      camera.position.set(0, 0, 8000);
       camera.lookAt(new THREE.Vector3(0, 0, 0));
+    
     }
     else {
-      camera.position.set(7000, 0, 0);
-      camera.lookAt(space.bodies[1].position);
+      for(var i = 1; i < space.bodies.length; i++) {
+        //if planet is the one currently being viewed, move to origin
+        if(i == currView) {
+          space.bodies[i].position = new THREE.Vector3(0, 0, 0); 
+        }
+        else {
+          space.bodies[i].position = space.bodies[i].orbitPos;
+        }
+        space.bodies[i].updatePosition();
+        space.bodies[i].velocity = new THREE.Vector3(0.000e00, 0, 0.000e00);
+      }
+      camera.position.set(0, 0, 1000);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
     }
-
   });
 
-  mainFolder.add(input, 'addPlanet');
+  mainFolder.add(input, 'addPlanet').onChange(function() {
+      //translate other planet out of way
+      space.bodies[currView].position = space.bodies[currView].orbitPos;
+      space.bodies[currView].updatePosition();
+      currView++;
+  });
+
+  mainFolder.add(input, 'viewPlanet', [1, 2, 3, 4]).onChange(function(val) {
+    if(!orbiting) {
+      if(val >= space.bodies.length) {
+        val = space.bodies.length - 1;
+      }
+      //translate planet at selected index to origin
+      space.bodies[val].position = new THREE.Vector3(0, 0, 0);
+      space.bodies[val].updatePosition();
+
+      //translate other planet out of way
+      if(currView != val) {
+        space.bodies[currView].position = space.bodies[currView].orbitPos;
+        space.bodies[currView].updatePosition();
+       }
+      currView = val;
+    }
+  });
+
+  var sunMaterial = new THREE.MeshStandardMaterial({
+    color: 0xffd100,
+    emissive: 0xfffe00
+  });
+
 
   var planet_geom = new THREE.IcosahedronBufferGeometry(100, 5);
-    var mesh = new THREE.Mesh(planet_geom);
+    var mesh = new THREE.Mesh(planet_geom, sunMaterial);
     scene.add(mesh);
 
 
-  space.initializePlanets(scene, camera, renderer, gui);
+  space.initializePlanets(scene, camera, renderer, gui, orbiting);
 
   // set camera position
-  //camera.position.set(space.bodies[1].x, space.bodies[1].y + 15.0, 400.0);
-  
-  camera.position.set(7000, 0, 0);
+  camera.position.set(0, 0, 1000);
   camera.lookAt(new THREE.Vector3(0, 0, 0));
-  
+
 
   // set scene background
   scene.background = background_texture;
-
   
   renderer.render(scene, camera);
 }
@@ -71,8 +114,8 @@ function onUpdate() {
   space.updateTime(currTime);
   if(camera != null) {
     space.simulate(orbiting, camera);
-    //console.log(camera.position);
   }
+
 }
 
 // when the scene is done initializing, it will call onLoad, then on frame updates, call onUpdate
